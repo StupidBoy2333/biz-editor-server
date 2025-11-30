@@ -30,6 +30,14 @@ jobs:
                   chmod 600 ~/.ssh/id_rsa
                   ssh-keyscan "47.243.145.149" >> ~/.ssh/known_hosts
             - name: deploy # 部署
+            - name: Check secrets
+              run: |
+                  if [ -z '${{ secrets.WFP_PASSWORD }}' ]; then
+                    echo 'WFP_PASSWORD secret is empty or not set'
+                    exit 1
+                  else
+                    echo 'WFP_PASSWORD secret is set (value hidden for security)'
+                  fi
               run: |
                   ssh work@47.243.145.149 "
                     # 【注意】用 work 账号登录，手动创建 /home/work/imooc-lego 目录
