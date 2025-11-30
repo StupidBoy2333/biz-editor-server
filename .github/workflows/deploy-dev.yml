@@ -35,11 +35,14 @@ jobs:
                     # 【注意】用 work 账号登录，手动创建 /home/work/imooc-lego 目录
                     # 然后 git clone https://username:password@github.com/imooc-lego/biz-editor-server.git -b dev （私有仓库，使用 github 用户名和密码）
                     # 记得删除 origin ，否则会暴露 github 密码
-
-                    cd /home/work/imooc-lego/biz-editor-server;
-                    git remote add origin https://wangfupeng1988:${{secrets.WFP_PASSWORD}}@github.com/imooc-lego/biz-editor-server.git;
-                    git checkout dev;
-                    git pull origin dev; # 重新下载最新代码
+                    mkdir -p /home/work/imooc-lego;
+                    cd /home/work/imooc-lego;
+                    if [ ! -d 'biz-editor-server' ]; then
+                    git remote add origin https://StupidBoy2333:${{secrets.WFP_PASSWORD}}@github.com/StupidBoy2333/biz-editor-server.git;
+                    fi
+                    cd biz-editor-server
+                    git checkout main;
+                    git pull origin main; # 重新下载最新代码
                     git remote remove origin; # 删除 origin ，否则会暴露 github 密码
                     # 启动 docker
                     docker-compose build editor-server; # 和 docker-compose.yml service 名字一致
