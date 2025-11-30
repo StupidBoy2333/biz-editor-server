@@ -8,6 +8,7 @@ on:
     push:
         branches:
             - 'dev' # 只针对 dev 分支
+            - 'main' # 只针对 dev 分支
         paths:
             - '.github/workflows/*'
             # - '__test__/**' # dev 不需要立即测试
