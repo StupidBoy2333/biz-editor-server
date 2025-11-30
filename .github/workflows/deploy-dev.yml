@@ -29,20 +29,18 @@ jobs:
                   echo "${{secrets.WFP_ID_RSA}}" > ~/.ssh/id_rsa # secret 在这里配置 https://github.com/imooc-lego/biz-editor-server/settings/secrets
                   chmod 600 ~/.ssh/id_rsa
                   ssh-keyscan "47.243.145.149" >> ~/.ssh/known_hosts
-            - name: deploy # 部署
-            - name: Check secrets
-              run: |
-                  if [ -z '${{ secrets.WFP_PASSWORD }}' ]; then
-                    echo 'WFP_PASSWORD secret is empty or not set'
-                    exit 1
-                  else
-                    echo 'WFP_PASSWORD secret is set (value hidden for security)'
-                  fi
+            - name: deploy # 部署     
               run: |
                   ssh work@47.243.145.149 "
                     # 【注意】用 work 账号登录，手动创建 /home/work/imooc-lego 目录
                     # 然后 git clone https://username:password@github.com/imooc-lego/biz-editor-server.git -b dev （私有仓库，使用 github 用户名和密码）
                     # 记得删除 origin ，否则会暴露 github 密码
+                    if [ -z '${{ secrets.WFP_PASSWORD }}' ]; then
+                    echo 'WFP_PASSWORD secret is empty or not set'
+                      exit 1
+                    else
+                      echo 'WFP_PASSWORD secret is set (value hidden for security)'
+                    fi
                     mkdir -p /home/work/imooc-lego/biz-editor-server;
                     cd /home/work/imooc-lego/biz-editor-server;
                     git remote add origin https://StupidBoy2333:${{ secrets.WFP_PASSWORD }}@github.com/StupidBoy2333/biz-editor-server.git;
