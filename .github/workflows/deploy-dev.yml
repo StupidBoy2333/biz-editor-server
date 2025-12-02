@@ -35,21 +35,20 @@ jobs:
             mkdir -p \$WORK_DIR
             cd \$WORK_DIR
             
-            # 配置 git
-            if [ ! -d .git ]; then
-              git init
-              git remote add origin https://github.com/StupidBoy2333/biz-editor-server.git
+            # 方法1：强制更新到最新代码（推荐）
+            if [ -d .git ]; then
+              # 如果已经有 git 仓库，强制重置
+              git fetch --all
+              git reset --hard origin/main
+            else
+              # 如果没有，重新克隆
+              cd /home/work/imooc-lego
+              rm -rf biz-editor-server
+              git clone --branch main https://github.com/StupidBoy2333/biz-editor-server.git
+              cd biz-editor-server
             fi
             
-            # 拉取 main 分支最新代码
-            git fetch origin
-            git checkout main
-            git reset --hard origin/main
-            
-            # 清理敏感信息
-            git remote remove origin || true
-            
-            # 构建并启动 Docker
+            # 启动 Docker（假设权限问题已解决）
             docker compose build --no-cache editor-server
             docker compose up -d
             
