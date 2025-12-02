@@ -1,9 +1,8 @@
-name: deploy for dev
+name: Deploy to Server
 
 on:
   push:
     branches:
-      - 'dev'
       - 'main'
     paths:
       - '.github/workflows/*'
@@ -13,106 +12,50 @@ on:
       - 'bin/*'
 
 jobs:
-  deploy-dev:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # 获取完整git历史
+      - uses: actions/checkout@v3
         
-      - name: Setup SSH
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.WFP_ID_RSA }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan "47.243.145.149" >> ~/.ssh/known_hosts
-      
-      - name: Check remote directory
+          
+      - name: Deploy to Server
         run: |
-          ssh -o StrictHostKeyChecking=no work@47.243.145.149 "
-            echo 'Checking remote directory...'
-            if [ ! -d /home/work/imooc-lego/biz-editor-server ]; then
-              echo 'Directory does not exist, creating...'
-              mkdir -p /home/work/imooc-lego/biz-editor-server
-            fi
-          "
-      
-      - name: Deploy via Git
-        run: |
-          # 方案1：使用git直接部署（推荐）
-          ssh -o StrictHostKeyChecking=no work@47.243.145.149 "
-            set -e  # 遇到错误立即退出
+          ssh work@47.243.145.149 "
+            set -e
             
-            echo '=== Starting deployment ==='
+            # 切换到工作目录
+            WORK_DIR=\"/home/work/imooc-lego/biz-editor-server\"
+            mkdir -p \$WORK_DIR
+            cd \$WORK_DIR
             
-            DEPLOY_DIR=\"/home/work/imooc-lego/biz-editor-server\"
-            REPO_URL=\"https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}\"
-            
-            cd \"\$DEPLOY_DIR\"
-            
-            # 检查是否是git仓库
+            # 配置 git
             if [ ! -d .git ]; then
-              echo 'Not a git repository, cloning...'
-              rm -rf \"\$DEPLOY_DIR\"/* 2>/dev/null || true
-              git clone -b ${{ github.ref_name }} \"\$REPO_URL\" .
-            else
-              echo 'Updating existing repository...'
-              # 重置仓库状态
-              git reset --hard
-              git clean -fd
-              
-              # 更新远程地址（使用token认证）
-              git remote set-url origin \"\$REPO_URL\" || git remote add origin \"\$REPO_URL\"
-              
-              # 拉取最新代码
-              git fetch origin
-              git checkout ${{ github.ref_name }}
-              git reset --hard origin/${{ github.ref_name }}
-              
-              # 清理远程信息（可选）
-              git remote remove origin
+              git init
+              git remote add origin https://github.com/StupidBoy2333/biz-editor-server.git
             fi
             
-            echo 'Code updated successfully'
+            # 拉取 main 分支最新代码
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
             
-            # 构建和启动Docker
-            if [ -f docker-compose.yml ]; then
-              echo 'Building Docker images...'
-              docker compose build --no-cache editor-server
-              
-              echo 'Starting containers...'
-              docker compose down 2>/dev/null || true
-              docker compose up -d
-              
-              echo 'Checking containers status...'
-              docker ps
-            else
-              echo 'Warning: docker-compose.yml not found'
-            fi
+            # 清理敏感信息
+            git remote remove origin || true
             
-            echo '=== Deployment completed ==='
+            # 构建并启动 Docker
+            docker compose build --no-cache editor-server
+            docker compose up -d
+            
+            # 清理旧的 Docker 镜像
+            docker image prune -f
           "
-      
-      - name: Verify deployment
-        run: |
-          ssh -o StrictHostKeyChecking=no work@47.243.145.149 "
-            echo 'Verifying deployment...'
-            cd /home/work/imooc-lego/biz-editor-server
-            
-            # 检查git状态
-            echo 'Git status:'
-            git status --short 2>/dev/null || echo 'Not a git repository'
-            
-            # 检查Docker容器
-            echo 'Docker containers:'
-            docker ps --filter \"name=editor\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"
-            
-            # 检查日志
-            echo 'Recent logs:'
-            docker logs --tail 10 editor-server 2>/dev/null || echo 'Container not running'
-          "
-      
+          
       - name: Cleanup SSH key
         run: rm -rf ~/.ssh/id_rsa
