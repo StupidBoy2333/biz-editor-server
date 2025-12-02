@@ -35,12 +35,6 @@ jobs:
                     # 【注意】用 work 账号登录，手动创建 /home/work/imooc-lego 目录
                     # 然后 git clone https://username:password@github.com/imooc-lego/biz-editor-server.git -b dev （私有仓库，使用 github 用户名和密码）
                     # 记得删除 origin ，否则会暴露 github 密码
-                    if [ -z '${{ secrets.WFP_PASSWORD }}' ]; then
-                    echo 'WFP_PASSWORD secret is empty or not set'
-                      exit 1
-                    else
-                      echo 'WFP_PASSWORD secret is set (value hidden for security)'
-                    fi
                     mkdir -p /home/work/imooc-lego/biz-editor-server;
                     cd /home/work/imooc-lego/biz-editor-server;
                     git remote add origin https://github.com/StupidBoy2333/biz-editor-server.git;
